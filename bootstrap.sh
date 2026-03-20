@@ -24,10 +24,10 @@ if ! command -v git >/dev/null 2>&1; then
     apk add git >/dev/null 2>&1
 fi
 
-# --- credentials ---
+# --- credentials (read from /dev/tty for pipe compatibility) ---
 printf "\n\033[1;33mДоступ к репозиторию:\033[0m\n"
-printf "Логин: "; read -r user
-printf "Пароль: "; stty -echo; read -r pass; stty echo; printf "\n"
+printf "Логин: "; read -r user </dev/tty
+printf "Пароль: "; stty -echo </dev/tty; read -r pass </dev/tty; stty echo </dev/tty; printf "\n"
 
 repo_url="https://${user}:${pass}@git.misaev.ru/cucadmuh/antizlo.git"
 
