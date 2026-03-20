@@ -27,7 +27,7 @@ fi
 # --- credentials (read from /dev/tty for pipe compatibility) ---
 printf "\n\033[1;33mДоступ к репозиторию:\033[0m\n"
 printf "Логин: "; read -r user </dev/tty
-printf "Пароль: "; stty -echo </dev/tty; read -r pass </dev/tty; stty echo </dev/tty; printf "\n"
+printf "Пароль: "; stty -F /dev/tty -echo; read -r pass </dev/tty; stty -F /dev/tty echo; printf "\n"
 
 repo_url="https://${user}:${pass}@git.misaev.ru/cucadmuh/antizlo.git"
 
