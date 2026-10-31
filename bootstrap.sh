@@ -24,29 +24,26 @@ if ! command -v git >/dev/null 2>&1; then
     apk add git >/dev/null 2>&1
 fi
 
-# --- credentials (read from /dev/tty for pipe compatibility) ---
-printf "\n\033[1;33mДоступ к репозиторию:\033[0m\n"
-printf "Логин: "; read -r user </dev/tty
-printf "Пароль: "; stty -F /dev/tty -echo; read -r pass </dev/tty; stty -F /dev/tty echo; printf "\n"
-
-repo_url="https://${user}:${pass}@git.misaev.ru/cucadmuh/antizlo.git"
-
 # --- clone ---
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT INT TERM
+mkdir -m 700 "$tmp/auth-home"
 
+printf "\n\033[1;33mДоступ к репозиторию:\033[0m\n"
+printf "Git запросит логин и пароль в терминале; пароль не сохраняется.\n"
 printf "\nКлонирую репозиторий ...\n"
-if ! git clone --depth 1 "$repo_url" "$tmp/repo" 2>&1 | grep -v '^$'; then
+# Git reads credentials from /dev/tty, including when this script is piped to sh.
+# Isolate authentication from stale .netrc files, helpers and askpass programs.
+# Keep HOME unchanged for the installer by limiting these settings to a subshell.
+if ! (
+    unset GIT_ASKPASS SSH_ASKPASS
+    export HOME="$tmp/auth-home"
+    export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null GIT_TERMINAL_PROMPT=1
+    git -c credential.helper= clone --depth 1 \
+        "https://git.misaev.ru/cucadmuh/antizlo.git/" "$tmp/repo"
+); then
     printf "\033[0;31mОшибка клонирования. Проверьте логин/пароль.\033[0m\n"
     exit 1
-fi
-
-# --- .netrc ---
-netrc="$HOME/.netrc"
-if ! grep -q "git.misaev.ru" "$netrc" 2>/dev/null; then
-    printf "machine git.misaev.ru\nlogin %s\npassword %s\n" "$user" "$pass" >> "$netrc"
-    chmod 600 "$netrc"
-    printf "\033[0;32m✓ Настроен .netrc для будущих git-операций\033[0m\n"
 fi
 
 # --- run setup ---
